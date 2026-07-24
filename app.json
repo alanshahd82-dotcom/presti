@@ -7,11 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "prestigecars",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1C2951"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "ma.prestigecars.app"
@@ -35,7 +30,15 @@
     },
     "plugins": [
       "expo-router",
-      "expo-system-ui"
+      "expo-system-ui",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#1C2951",
+          "image": "./assets/images/splash.png",
+          "resizeMode": "contain"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
