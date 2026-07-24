@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -25,6 +25,9 @@ const WEBSITE_URL = 'https://www.prestigecars.ma/';
 const ANDROID_USER_AGENT =
   'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
 
+// If the WebView hasn't fired onLoadEnd within this many ms, treat it as an error.
+const LOAD_TIMEOUT_MS = 20_000;
+
 const COLORS = {
   primary: '#F5B300',
   dark: '#1C2951',
@@ -42,6 +45,7 @@ function LoadingScreen() {
         <Text style={styles.logoCars}>CARS</Text>
       </View>
       <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 32 }} />
+      <Text style={styles.loadingHint}>Chargement en cours…</Text>
     </View>
   );
 }
@@ -123,10 +127,35 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [canGoBack, setCanGoBack] = useState(false);
+  const loadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isWeb = Platform.OS === 'web';
 
-  // Android hardware back button — navigate WebView back if possible
+  // ── Loading timeout ──────────────────────────────────────────────────────
+  // If the WebView hasn't finished loading after LOAD_TIMEOUT_MS, show the
+  // error screen so the user is never stuck staring at a spinner forever.
+  const startLoadingTimer = useCallback(() => {
+    if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
+    loadingTimerRef.current = setTimeout(() => {
+      setLoading(false);
+      setError(true);
+    }, LOAD_TIMEOUT_MS);
+  }, []);
+
+  const clearLoadingTimer = useCallback(() => {
+    if (loadingTimerRef.current) {
+      clearTimeout(loadingTimerRef.current);
+      loadingTimerRef.current = null;
+    }
+  }, []);
+
+  // Start the timer on mount (initial load)
+  useEffect(() => {
+    if (!isWeb) startLoadingTimer();
+    return () => clearLoadingTimer();
+  }, [isWeb, startLoadingTimer, clearLoadingTimer]);
+
+  // ── Android hardware back ────────────────────────────────────────────────
   useFocusEffect(
     useCallback(() => {
       if (Platform.OS !== 'android') return undefined;
@@ -145,20 +174,17 @@ export default function HomeScreen() {
   );
 
   const handleGoBack = () => webViewRef.current?.goBack();
+
   const handleRefresh = () => {
     setError(false);
     setLoading(true);
+    startLoadingTimer();
     webViewRef.current?.reload();
   };
 
-  const headerPaddingTop =
-    Platform.OS === 'web' ? 0 : insets.top;
-
-  const containerPaddingTop =
-    Platform.OS === 'web' ? 67 : 0;
-
-  const bottomHeight =
-    Platform.OS === 'web' ? 34 : insets.bottom;
+  const headerPaddingTop = Platform.OS === 'web' ? 0 : insets.top;
+  const containerPaddingTop = Platform.OS === 'web' ? 67 : 0;
+  const bottomHeight = Platform.OS === 'web' ? 34 : insets.bottom;
 
   return (
     <View style={[styles.container, { paddingTop: containerPaddingTop }]}>
@@ -179,14 +205,22 @@ export default function HomeScreen() {
           ref={webViewRef}
           source={{ uri: WEBSITE_URL }}
           style={styles.webview}
-          onLoadStart={() => setLoading(true)}
-          onLoadEnd={() => setLoading(false)}
+          onLoadStart={() => {
+            setLoading(true);
+            startLoadingTimer();
+          }}
+          onLoadEnd={() => {
+            clearLoadingTimer();
+            setLoading(false);
+          }}
           onError={() => {
+            clearLoadingTimer();
             setLoading(false);
             setError(true);
           }}
           onHttpError={(syntheticEvent: { nativeEvent: { statusCode: number } }) => {
             if (syntheticEvent.nativeEvent.statusCode >= 500) {
+              clearLoadingTimer();
               setError(true);
             }
           }}
@@ -302,6 +336,12 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: '900' as const,
     letterSpacing: 4,
+  },
+  loadingHint: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 13,
+    marginTop: 16,
+    letterSpacing: 1,
   },
 
   // Error screen
