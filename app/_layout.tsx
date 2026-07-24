@@ -5,12 +5,20 @@ import * as SystemUI from 'expo-system-ui';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   useEffect(() => {
-    SystemUI.setBackgroundColorAsync('#1C2951');
-    SplashScreen.hideAsync();
+    async function prepare() {
+      try {
+        await SystemUI.setBackgroundColorAsync('#1C2951');
+      } catch (e) {
+        // ignore
+      } finally {
+        await SplashScreen.hideAsync().catch(() => {});
+      }
+    }
+    prepare();
   }, []);
 
   return (
