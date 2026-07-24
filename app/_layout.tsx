@@ -5,23 +5,21 @@ import * as SystemUI from 'expo-system-ui';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-// NOTE: Do NOT call SplashScreen.preventAutoHideAsync() here.
-// expo-router already calls it internally. Calling it again creates a
-// reference count of 2, so a single hideAsync() only brings it to 1
-// (never 0), and the splash screen never disappears.
+// Prevent the splash screen from auto-hiding before we're ready.
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   useEffect(() => {
-    async function prepare() {
-      try {
-        await SystemUI.setBackgroundColorAsync('#1C2951');
-      } catch (e) {
-        // ignore
-      } finally {
-        await SplashScreen.hideAsync().catch(() => {});
-      }
-    }
-    prepare();
+    // CRITICAL: Do NOT await setBackgroundColorAsync.
+    // On certain Android OEM skins (Samsung, Xiaomi, Huawei…) this promise
+    // can stall indefinitely without resolving or rejecting.
+    // The old try/await/finally pattern meant hideAsync() was never reached
+    // when that happened — leaving the splash screen frozen forever.
+    // Fire-and-forget is the correct pattern here.
+    SystemUI.setBackgroundColorAsync('#1C2951').catch(() => {});
+
+    // Hide the splash immediately. Nothing here needs to pre-load.
+    SplashScreen.hideAsync().catch(() => {});
   }, []);
 
   return (
