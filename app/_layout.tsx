@@ -5,7 +5,10 @@ import * as SystemUI from 'expo-system-ui';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-SplashScreen.preventAutoHideAsync().catch(() => {});
+// NOTE: Do NOT call SplashScreen.preventAutoHideAsync() here.
+// expo-router already calls it internally. Calling it again creates a
+// reference count of 2, so a single hideAsync() only brings it to 1
+// (never 0), and the splash screen never disappears.
 
 export default function RootLayout() {
   useEffect(() => {
