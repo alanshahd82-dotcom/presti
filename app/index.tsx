@@ -2,16 +2,23 @@ import React, { useRef, useState, useCallback } from 'react';
 import {
   StyleSheet,
   View,
-  ActivityIndicator,
   Text,
   TouchableOpacity,
   Platform,
   BackHandler,
+  ActivityIndicator,
 } from 'react-native';
-import { WebView, WebViewNavigation } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
+
+// react-native-webview does not support web platform — use conditional import
+let WebView: any = null;
+let WebViewNavigation: any = null;
+if (Platform.OS !== 'web') {
+  const rnWebView = require('react-native-webview');
+  WebView = rnWebView.WebView;
+}
 
 const WEBSITE_URL = 'https://www.prestigecars.ma/';
 
@@ -19,9 +26,10 @@ const COLORS = {
   primary: '#F5B300',
   dark: '#1C2951',
   white: '#FFFFFF',
-  error: '#FF3B30',
   gray: '#F2F2F7',
-};
+} as const;
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function LoadingScreen() {
   return (
@@ -50,70 +58,119 @@ function ErrorScreen({ onRetry }: { onRetry: () => void }) {
   );
 }
 
+// Web fallback: show a message since WebView is not supported on web
+function WebFallback() {
+  return (
+    <View style={styles.loadingContainer}>
+      <View style={styles.logoContainer}>
+        <Text style={styles.logoText}>PRESTIGE</Text>
+        <Text style={styles.logoCars}>CARS</Text>
+      </View>
+      <Text style={[styles.errorMessage, { marginTop: 24 }]}>
+        Ouvrez l&apos;application sur votre téléphone
+      </Text>
+    </View>
+  );
+}
+
+// ─── Header ───────────────────────────────────────────────────────────────────
+
+interface HeaderProps {
+  canGoBack: boolean;
+  onGoBack: () => void;
+  onRefresh: () => void;
+  paddingTop: number;
+}
+
+function Header({ canGoBack, onGoBack, onRefresh, paddingTop }: HeaderProps) {
+  return (
+    <View style={[styles.header, { paddingTop }]}>
+      <View style={styles.headerContent}>
+        <TouchableOpacity
+          style={[styles.iconButton, !canGoBack && styles.invisible]}
+          onPress={onGoBack}
+          disabled={!canGoBack}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="arrow-back" size={22} color={COLORS.white} />
+        </TouchableOpacity>
+
+        <View style={styles.logoRow}>
+          <Text style={styles.headerLogoText}>PRESTIGE</Text>
+          <Text style={styles.headerLogoCars}>CARS</Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={onRefresh}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="refresh-outline" size={22} color={COLORS.white} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
+
 export default function HomeScreen() {
-  const webViewRef = useRef<WebView>(null);
+  const webViewRef = useRef<typeof WebView>(null);
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [canGoBack, setCanGoBack] = useState(false);
 
-  // Android back button handling
+  const isWeb = Platform.OS === 'web';
+
+  // Android hardware back button — navigate WebView back if possible
   useFocusEffect(
     useCallback(() => {
-      if (Platform.OS !== 'android') return;
-      const onBackPress = () => {
+      if (Platform.OS !== 'android') return undefined;
+
+      const onBackPress = (): boolean => {
         if (canGoBack && webViewRef.current) {
           webViewRef.current.goBack();
           return true;
         }
         return false;
       };
+
       const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
       return () => sub.remove();
     }, [canGoBack])
   );
 
-  const handleNavigationStateChange = (navState: WebViewNavigation) => {
-    setCanGoBack(navState.canGoBack);
-  };
-
-  const handleRetry = () => {
+  const handleGoBack = () => webViewRef.current?.goBack();
+  const handleRefresh = () => {
     setError(false);
     setLoading(true);
     webViewRef.current?.reload();
   };
 
-  return (
-    <View style={[styles.container, { paddingTop: Platform.OS === 'web' ? 67 : 0 }]}>
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: Platform.OS === 'web' ? 0 : insets.top }]}>
-        <View style={styles.headerContent}>
-          {canGoBack && (
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => webViewRef.current?.goBack()}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="arrow-back" size={22} color={COLORS.white} />
-            </TouchableOpacity>
-          )}
-          <View style={styles.logoRow}>
-            <Text style={styles.headerLogoText}>PRESTIGE</Text>
-            <Text style={styles.headerLogoCars}>CARS</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.refreshButton}
-            onPress={() => webViewRef.current?.reload()}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="refresh-outline" size={22} color={COLORS.white} />
-          </TouchableOpacity>
-        </View>
-      </View>
+  const headerPaddingTop =
+    Platform.OS === 'web' ? 0 : insets.top;
 
-      {/* WebView */}
-      {error ? (
-        <ErrorScreen onRetry={handleRetry} />
+  const containerPaddingTop =
+    Platform.OS === 'web' ? 67 : 0;
+
+  const bottomHeight =
+    Platform.OS === 'web' ? 34 : insets.bottom;
+
+  return (
+    <View style={[styles.container, { paddingTop: containerPaddingTop }]}>
+      <Header
+        canGoBack={canGoBack}
+        onGoBack={handleGoBack}
+        onRefresh={handleRefresh}
+        paddingTop={headerPaddingTop}
+      />
+
+      {/* Content */}
+      {isWeb ? (
+        <WebFallback />
+      ) : error ? (
+        <ErrorScreen onRetry={handleRefresh} />
       ) : (
         <WebView
           ref={webViewRef}
@@ -125,43 +182,48 @@ export default function HomeScreen() {
             setLoading(false);
             setError(true);
           }}
-          onHttpError={(syntheticEvent) => {
-            const { nativeEvent } = syntheticEvent;
-            if (nativeEvent.statusCode >= 500) {
+          onHttpError={(syntheticEvent: { nativeEvent: { statusCode: number } }) => {
+            if (syntheticEvent.nativeEvent.statusCode >= 500) {
               setError(true);
             }
           }}
-          onNavigationStateChange={handleNavigationStateChange}
-          allowsBackForwardNavigationGestures={true}
-          pullToRefreshEnabled={true}
+          onNavigationStateChange={(navState: { canGoBack: boolean }) => {
+            setCanGoBack(navState.canGoBack);
+          }}
+          allowsBackForwardNavigationGestures
+          pullToRefreshEnabled
           startInLoadingState={false}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          allowsInlineMediaPlayback={true}
+          javaScriptEnabled
+          domStorageEnabled
+          allowsInlineMediaPlayback
           mediaPlaybackRequiresUserAction={false}
           setSupportMultipleWindows={false}
           userAgent="Mozilla/5.0 (Linux; Android 14; Mobile) PrestigeCarsMobileApp/1.0"
         />
       )}
 
-      {/* Loading Overlay */}
-      {loading && !error && (
-        <View style={styles.loadingOverlay}>
+      {/* Loading overlay — shown on top while WebView is loading */}
+      {loading && !error && !isWeb && (
+        <View style={styles.loadingOverlay} pointerEvents="none">
           <LoadingScreen />
         </View>
       )}
 
-      {/* Bottom safe area */}
-      <View style={{ height: Platform.OS === 'web' ? 34 : insets.bottom, backgroundColor: COLORS.dark }} />
+      {/* Bottom safe-area spacer */}
+      <View style={{ height: bottomHeight, backgroundColor: COLORS.dark }} />
     </View>
   );
 }
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.dark,
   },
+
+  // Header
   header: {
     backgroundColor: COLORS.dark,
   },
@@ -182,31 +244,32 @@ const styles = StyleSheet.create({
   headerLogoText: {
     color: COLORS.white,
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: '800' as const,
     letterSpacing: 2,
   },
   headerLogoCars: {
     color: COLORS.primary,
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: '800' as const,
     letterSpacing: 2,
   },
-  backButton: {
+  iconButton: {
     width: 36,
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  refreshButton: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
+  invisible: {
+    opacity: 0,
   },
+
+  // WebView
   webview: {
     flex: 1,
     backgroundColor: COLORS.white,
   },
+
+  // Loading overlay
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: COLORS.dark,
@@ -225,15 +288,17 @@ const styles = StyleSheet.create({
   logoText: {
     color: COLORS.white,
     fontSize: 36,
-    fontWeight: '900',
+    fontWeight: '900' as const,
     letterSpacing: 4,
   },
   logoCars: {
     color: COLORS.primary,
     fontSize: 36,
-    fontWeight: '900',
+    fontWeight: '900' as const,
     letterSpacing: 4,
   },
+
+  // Error screen
   errorContainer: {
     flex: 1,
     alignItems: 'center',
@@ -245,7 +310,7 @@ const styles = StyleSheet.create({
   errorTitle: {
     color: COLORS.white,
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: '700' as const,
     textAlign: 'center',
   },
   errorMessage: {
@@ -264,6 +329,6 @@ const styles = StyleSheet.create({
   retryText: {
     color: COLORS.dark,
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '700' as const,
   },
 });
