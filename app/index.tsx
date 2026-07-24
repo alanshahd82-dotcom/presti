@@ -14,13 +14,16 @@ import { useFocusEffect } from 'expo-router';
 
 // react-native-webview does not support web platform — use conditional import
 let WebView: any = null;
-let WebViewNavigation: any = null;
 if (Platform.OS !== 'web') {
   const rnWebView = require('react-native-webview');
   WebView = rnWebView.WebView;
 }
 
 const WEBSITE_URL = 'https://www.prestigecars.ma/';
+
+// Standard Chrome Android UA — ensures the website renders the full mobile experience
+const ANDROID_USER_AGENT =
+  'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
 
 const COLORS = {
   primary: '#F5B300',
@@ -115,7 +118,7 @@ function Header({ canGoBack, onGoBack, onRefresh, paddingTop }: HeaderProps) {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
-  const webViewRef = useRef<typeof WebView>(null);
+  const webViewRef = useRef<any>(null);
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -190,6 +193,7 @@ export default function HomeScreen() {
           onNavigationStateChange={(navState: { canGoBack: boolean }) => {
             setCanGoBack(navState.canGoBack);
           }}
+          userAgent={ANDROID_USER_AGENT}
           allowsBackForwardNavigationGestures
           pullToRefreshEnabled
           startInLoadingState={false}
@@ -198,7 +202,9 @@ export default function HomeScreen() {
           allowsInlineMediaPlayback
           mediaPlaybackRequiresUserAction={false}
           setSupportMultipleWindows={false}
-          userAgent="Mozilla/5.0 (Linux; Android 14; Mobile) PrestigeCarsMobileApp/1.0"
+          mixedContentMode="compatibility"
+          cacheEnabled
+          cacheMode="LOAD_CACHE_ELSE_NETWORK"
         />
       )}
 

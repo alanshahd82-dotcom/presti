@@ -33,15 +33,22 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Cache npm dependencies
+      - name: Enable Corepack (yarn)
+        run: corepack enable
+
+      - name: Cache yarn dependencies
         uses: actions/cache@v4
         with:
-          path: ~/.npm
-          key: npm-${{ hashFiles('package-lock.json') }}
-          restore-keys: npm-
+          path: |
+            ~/.yarn/cache
+            ~/.cache/yarn
+          key: yarn-${{ hashFiles('package.json') }}
+          restore-keys: yarn-
 
       - name: Install dependencies
-        run: npm ci
+        run: yarn install --ignore-engines --non-interactive
+        env:
+          YARN_ENABLE_TELEMETRY: 0
 
       - name: Expo Prebuild (generate android/ folder)
         run: npx expo prebuild --platform android --clean --no-install
