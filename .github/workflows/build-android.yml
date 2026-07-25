@@ -30,40 +30,28 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Bundle JavaScript into APK
-        run: |
-          mkdir -p android/app/src/main/assets
-          npx react-native bundle \
-            --platform android \
-            --dev false \
-            --entry-file index.js \
-            --bundle-output android/app/src/main/assets/index.android.bundle \
-            --assets-dest android/app/src/main/res
-
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      - name: Build Debug APK (self-contained)
-        run: cd android && ./gradlew assembleDebug --no-daemon
+      - name: Build Release APK
+        run: cd android && ./gradlew assembleRelease --no-daemon
 
       - name: Rename APK
-        run: cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/PrestigeCars.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/PrestigeCars.apk
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: PrestigeCars
-          path: android/app/build/outputs/apk/debug/PrestigeCars.apk
+          path: android/app/build/outputs/apk/release/PrestigeCars.apk
           retention-days: 30
 
-      - name: Delete old release asset & upload new APK
+      - name: Delete old release assets & upload new APK
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Delete old assets from release v1.0 (id 359882741)
-          for ID in $(gh api repos/${{ github.repository }}/releases/359882741/assets --jq '.[].id'); do
-            gh api -X DELETE repos/${{ github.repository }}/releases/359882741/assets/$ID
+          for ID in $(gh api repos/${{ github.repository }}/releases/tags/v1.0 --jq '.assets[].id' 2>/dev/null || echo ""); do
+            gh api -X DELETE repos/${{ github.repository }}/releases/assets/$ID
           done
-          # Upload new APK
-          gh release upload v1.0 android/app/build/outputs/apk/debug/PrestigeCars.apk \
+          gh release upload v1.0 android/app/build/outputs/apk/release/PrestigeCars.apk \
             --repo ${{ github.repository }} --clobber
