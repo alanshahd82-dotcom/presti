@@ -1,118 +1,126 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, { useRef, useState } from 'react';
 import {
+  ActivityIndicator,
+  BackHandler,
+  Platform,
   SafeAreaView,
-  ScrollView,
   StatusBar,
   StyleSheet,
-  Text,
-  useColorScheme,
+  TouchableOpacity,
   View,
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+const SITE_URL = 'https://www.prestigecars.ma/';
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+const PRIMARY = '#1a2744';   // dark navy — PrestigeCars brand colour
+const GOLD    = '#f5c518';   // gold accent
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+export default function App(): React.JSX.Element {
+  const webRef = useRef<WebView>(null);
+  const [loading, setLoading] = useState(true);
+  const [canGoBack, setCanGoBack] = useState(false);
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+  /* Android hardware back → WebView back */
+  React.useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (canGoBack) {
+        webRef.current?.goBack();
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [canGoBack]);
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+    <SafeAreaView style={styles.root}>
+      <StatusBar barStyle="light-content" backgroundColor={PRIMARY} />
+
+      {/* Top bar */}
+      <View style={styles.bar}>
+        {canGoBack && (
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => webRef.current?.goBack()}
+            activeOpacity={0.7}
+          >
+            <View style={styles.backArrow} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* WebView */}
+      <WebView
+        ref={webRef}
+        source={{ uri: SITE_URL }}
+        style={styles.web}
+        javaScriptEnabled
+        domStorageEnabled
+        startInLoadingState
+        allowsBackForwardNavigationGestures          // iOS swipe back
+        onLoadStart={() => setLoading(true)}
+        onLoadEnd={() => setLoading(false)}
+        onNavigationStateChange={s => setCanGoBack(s.canGoBack)}
+        renderLoading={() => (
+          <View style={styles.loader}>
+            <ActivityIndicator size="large" color={GOLD} />
+          </View>
+        )}
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
+
+      {/* Global loading overlay on first load */}
+      {loading && (
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <View style={styles.splash}>
+            <ActivityIndicator size="large" color={GOLD} />
+          </View>
         </View>
-      </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  root: {
+    flex: 1,
+    backgroundColor: PRIMARY,
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  bar: {
+    height: 44,
+    backgroundColor: PRIMARY,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
+  backBtn: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  highlight: {
-    fontWeight: '700',
+  backArrow: {
+    width: 12,
+    height: 12,
+    borderLeftWidth: 2,
+    borderBottomWidth: 2,
+    borderColor: '#ffffff',
+    transform: [{ rotate: '45deg' }],
+    marginLeft: 6,
+  },
+  web: {
+    flex: 1,
+  },
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: PRIMARY,
+  },
+  splash: {
+    flex: 1,
+    backgroundColor: PRIMARY,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
-
-export default App;
