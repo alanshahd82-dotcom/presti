@@ -22,7 +22,8 @@
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE"
       ],
-      "allowBackup": false
+      "allowBackup": false,
+      "newArchEnabled": false
     },
     "web": {
       "favicon": "./assets/images/favicon.png",
@@ -44,7 +45,8 @@
         {
           "android": {
             "enableProguardInReleaseBuilds": false,
-            "enableShrinkResourcesInReleaseBuilds": false
+            "enableShrinkResourcesInReleaseBuilds": false,
+            "newArchEnabled": false
           }
         }
       ]
