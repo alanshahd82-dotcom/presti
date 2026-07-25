@@ -30,33 +30,40 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Bundle JavaScript into APK
+        run: |
+          mkdir -p android/app/src/main/assets
+          npx react-native bundle \
+            --platform android \
+            --dev false \
+            --entry-file index.js \
+            --bundle-output android/app/src/main/assets/index.android.bundle \
+            --assets-dest android/app/src/main/res
+
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      - name: Build Debug APK
-        run: |
-          cd android
-          ./gradlew assembleDebug --no-daemon
+      - name: Build Debug APK (self-contained)
+        run: cd android && ./gradlew assembleDebug --no-daemon
 
-      - name: Upload APK artifact
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/PrestigeCars.apk
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PrestigeCars-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: PrestigeCars
+          path: android/app/build/outputs/apk/debug/PrestigeCars.apk
           retention-days: 30
 
-      - name: Create GitHub Release with APK
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: build-${{ github.run_number }}
-          name: "PrestigeCars APK — Build ${{ github.run_number }}"
-          body: |
-            ## تثبيت التطبيق
-            1. حمّل الملف `app-debug.apk`
-            2. افتحه على هاتف الأندرويد
-            3. اسمح بـ "تثبيت من مصادر غير معروفة"
-          files: android/app/build/outputs/apk/debug/app-debug.apk
-          draft: false
-          prerelease: false
+      - name: Delete old release asset & upload new APK
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Delete old assets from release v1.0 (id 359882741)
+          for ID in $(gh api repos/${{ github.repository }}/releases/359882741/assets --jq '.[].id'); do
+            gh api -X DELETE repos/${{ github.repository }}/releases/359882741/assets/$ID
+          done
+          # Upload new APK
+          gh release upload v1.0 android/app/build/outputs/apk/debug/PrestigeCars.apk \
+            --repo ${{ github.repository }} --clobber
