@@ -15,6 +15,8 @@ import { fetchVehicles } from '../api/supabase';
 import { Vehicle, RootStackParamList, HomeTabParamList } from '../types';
 import { useFavorites } from '../hooks/useFavorites';
 import CarCard from '../components/CarCard';
+import { useTheme } from '../context/ThemeContext';
+import { SearchIcon, FilterIcon } from '../components/Icons';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'HomeTabs'>;
 type RouteType = RouteProp<HomeTabParamList, 'Listings'>;
@@ -36,6 +38,7 @@ const SORT_OPTIONS = [
 export default function ListingsScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<RouteType>();
+  const { colors } = useTheme();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -45,7 +48,6 @@ export default function ListingsScreen() {
   const [showSort, setShowSort] = useState(false);
   const { toggleFavorite, isFavorite } = useFavorites();
 
-  // Apply route param category
   useEffect(() => {
     if (route.params?.categoryId != null) {
       setActiveCategory(route.params.categoryId);
@@ -56,8 +58,8 @@ export default function ListingsScreen() {
     try {
       const data = await fetchVehicles();
       setVehicles(data);
-    } catch (_) {
-    } finally {
+    } catch (_) {}
+    finally {
       setLoading(false);
       setRefreshing(false);
     }
@@ -95,12 +97,13 @@ export default function ListingsScreen() {
   }, [vehicles, activeCategory, search, sortKey]);
 
   const renderItem = useCallback(({ item, index }: { item: Vehicle; index: number }) => {
-    if (index % 2 === 1) return null; // rendered by the even item
+    if (index % 2 === 1) return null;
     const right = filtered[index + 1];
     return (
       <View style={styles.row}>
         <CarCard
           vehicle={item}
+          index={index}
           onPress={() => navigation.navigate('CarDetail', { vehicle: item })}
           onFavorite={() => toggleFavorite(item)}
           isFavorite={isFavorite(item.id)}
@@ -108,6 +111,7 @@ export default function ListingsScreen() {
         {right ? (
           <CarCard
             vehicle={right}
+            index={index + 1}
             onPress={() => navigation.navigate('CarDetail', { vehicle: right })}
             onFavorite={() => toggleFavorite(right)}
             isFavorite={isFavorite(right.id)}
@@ -120,68 +124,80 @@ export default function ListingsScreen() {
   }, [filtered, navigation, toggleFavorite, isFavorite]);
 
   return (
-    <View style={styles.container}>
-      {/* Search */}
-      <View style={styles.searchBar}>
-        <Text style={styles.searchIcon}>🔍</Text>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Rechercher par nom, marque..."
-          placeholderTextColor="#9CA3AF"
-          value={search}
-          onChangeText={setSearch}
-          clearButtonMode="while-editing"
-        />
-      </View>
+    <View style={[styles.screen, { backgroundColor: colors.bg }]}>
 
-      {/* Category filter */}
-      <View style={styles.filtersRow}>
-        <View style={styles.categoryChips}>
-          {FILTERS.map(f => (
-            <TouchableOpacity
-              key={f.key}
-              style={[styles.chip, activeCategory === f.categoryId && styles.chipActive]}
-              onPress={() => setActiveCategory(f.categoryId)}>
-              <Text style={[styles.chipText, activeCategory === f.categoryId && styles.chipTextActive]}>
-                {f.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+      {/* Search bar */}
+      <View style={[styles.searchWrap, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <View style={[styles.searchBox, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+          <SearchIcon size={16} color={colors.textMuted} />
+          <TextInput
+            style={[styles.searchInput, { color: colors.text }]}
+            placeholder="Rechercher une voiture..."
+            placeholderTextColor={colors.textMuted}
+            value={search}
+            onChangeText={setSearch}
+            returnKeyType="search"
+          />
         </View>
-        <TouchableOpacity style={styles.sortBtn} onPress={() => setShowSort(s => !s)}>
-          <Text style={styles.sortBtnText}>⇅</Text>
+        <TouchableOpacity
+          style={[styles.sortBtn, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
+          onPress={() => setShowSort(v => !v)}
+          activeOpacity={0.8}>
+          <FilterIcon size={18} color={colors.text} />
         </TouchableOpacity>
       </View>
 
       {/* Sort dropdown */}
       {showSort && (
-        <View style={styles.sortDropdown}>
-          {SORT_OPTIONS.map(o => (
+        <View style={[styles.sortDropdown, { backgroundColor: colors.card, shadowColor: colors.shadow }]}>
+          {SORT_OPTIONS.map(opt => (
             <TouchableOpacity
-              key={o.key}
-              style={[styles.sortOption, sortKey === o.key && styles.sortOptionActive]}
-              onPress={() => { setSortKey(o.key); setShowSort(false); }}>
-              <Text style={[styles.sortOptionText, sortKey === o.key && styles.sortOptionTextActive]}>
-                {o.label}
+              key={opt.key}
+              style={[styles.sortOption, sortKey === opt.key && { backgroundColor: colors.primary + '14' }]}
+              onPress={() => { setSortKey(opt.key); setShowSort(false); }}>
+              <Text style={[styles.sortOptionText, { color: colors.textSub }, sortKey === opt.key && { color: colors.primary, fontWeight: '700' }]}>
+                {opt.label}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
       )}
 
-      {/* Count */}
-      <Text style={styles.count}>{filtered.length} véhicule{filtered.length !== 1 ? 's' : ''}</Text>
+      {/* Filter chips */}
+      <View style={[styles.filtersRow, { borderBottomColor: colors.border }]}>
+        {FILTERS.map(f => {
+          const active = activeCategory === f.categoryId;
+          return (
+            <TouchableOpacity
+              key={f.key}
+              style={[
+                styles.chip,
+                { backgroundColor: colors.card, borderColor: colors.border },
+                active && { backgroundColor: colors.primary, borderColor: colors.primary },
+              ]}
+              onPress={() => setActiveCategory(f.categoryId)}>
+              <Text style={[styles.chipText, { color: colors.textSub }, active && { color: '#F5C518' }]}>
+                {f.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
-      {/* List */}
+      {/* Count */}
+      <Text style={[styles.count, { color: colors.textMuted }]}>
+        {filtered.length} véhicule{filtered.length !== 1 ? 's' : ''}
+      </Text>
+
       {loading ? (
         <View style={styles.loader}>
-          <ActivityIndicator size="large" color="#1a2744" />
-          <Text style={styles.loaderText}>Chargement de la flotte...</Text>
+          <ActivityIndicator size="large" color="#F5C518" />
+          <Text style={[styles.loaderText, { color: colors.textSub }]}>Chargement...</Text>
         </View>
       ) : filtered.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyIcon}>🚗</Text>
-          <Text style={styles.emptyText}>Aucun véhicule trouvé</Text>
+          <Text style={styles.emptyIcon}>🔍</Text>
+          <Text style={[styles.emptyText, { color: colors.text }]}>Aucun résultat</Text>
           <TouchableOpacity onPress={() => { setSearch(''); setActiveCategory(null); }}>
             <Text style={styles.emptyReset}>Réinitialiser les filtres</Text>
           </TouchableOpacity>
@@ -189,13 +205,22 @@ export default function ListingsScreen() {
       ) : (
         <FlatList
           data={filtered}
-          keyExtractor={item => item.id.toString()}
+          keyExtractor={v => v.id.toString()}
           renderItem={renderItem}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => { setRefreshing(true); load(); }}
+              tintColor="#F5C518"
+              colors={['#F5C518']}
+            />
+          }
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#1a2744" />
-          }
+          removeClippedSubviews
+          initialNumToRender={6}
+          maxToRenderPerBatch={4}
+          windowSize={5}
         />
       )}
     </View>
@@ -203,74 +228,90 @@ export default function ListingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
-  searchBar: {
+  screen: { flex: 1 },
+
+  // Search
+  searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 8,
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  searchBox: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  searchIcon: { fontSize: 16, marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 14, color: '#1a2744' },
-  filtersRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginBottom: 4 },
-  categoryChips: { flexDirection: 'row', flex: 1, gap: 6 },
-  chip: {
     paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    paddingVertical: 10,
+    borderWidth: 1,
+    gap: 8,
   },
-  chipActive: { backgroundColor: '#1a2744', borderColor: '#1a2744' },
-  chipText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
-  chipTextActive: { color: '#F5C518' },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    padding: 0,
+  },
   sortBtn: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    width: 36,
-    height: 36,
+    borderRadius: 12,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    marginLeft: 8,
+    borderWidth: 1,
   },
-  sortBtnText: { fontSize: 16, color: '#1a2744' },
+
+  // Sort dropdown
   sortDropdown: {
-    backgroundColor: '#fff',
     marginHorizontal: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 4,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 8,
     zIndex: 100,
+    marginBottom: 4,
   },
-  sortOption: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 8 },
-  sortOptionActive: { backgroundColor: '#1a274410' },
-  sortOptionText: { fontSize: 13, color: '#374151', fontWeight: '500' },
-  sortOptionTextActive: { color: '#1a2744', fontWeight: '700' },
-  count: { fontSize: 12, color: '#9CA3AF', marginLeft: 16, marginBottom: 8, marginTop: 4 },
+  sortOption: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10 },
+  sortOptionText: { fontSize: 13, fontWeight: '500' },
+
+  // Filters
+  filtersRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  chip: {
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1.5,
+  },
+  chipText: { fontSize: 12, fontWeight: '600' },
+
+  // List
+  count: {
+    fontSize: 12,
+    marginLeft: 16,
+    marginBottom: 6,
+    marginTop: 8,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   list: { paddingHorizontal: 16, paddingBottom: 24 },
   row: { flexDirection: 'row', gap: 16, justifyContent: 'space-between' },
   placeholder: { flex: 1 },
   loader: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  loaderText: { color: '#6B7280', fontSize: 14 },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
+  loaderText: { fontSize: 14 },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   emptyIcon: { fontSize: 48 },
-  emptyText: { fontSize: 16, color: '#374151', fontWeight: '600' },
-  emptyReset: { fontSize: 14, color: '#F5C518', fontWeight: '600', marginTop: 4 },
+  emptyText: { fontSize: 16, fontWeight: '600' },
+  emptyReset: { fontSize: 14, color: '#F5C518', fontWeight: '700', marginTop: 4 },
 });

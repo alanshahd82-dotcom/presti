@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,9 +6,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  Animated,
 } from 'react-native';
 import { Vehicle } from '../types';
 import { formatPrice, getCategoryLabel, getCategoryColor } from '../utils/format';
+import { useTheme } from '../context/ThemeContext';
+import { HeartIcon, StarIcon, GearIcon, UsersIcon } from './Icons';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 52) / 2;
@@ -18,86 +21,149 @@ interface Props {
   onPress: () => void;
   onFavorite: () => void;
   isFavorite: boolean;
+  index?: number;
 }
 
-export default function CarCard({ vehicle, onPress, onFavorite, isFavorite }: Props) {
+export default function CarCard({ vehicle, onPress, onFavorite, isFavorite, index = 0 }: Props) {
+  const { colors } = useTheme();
   const catColor = getCategoryColor(vehicle.category_id);
   const catLabel = getCategoryLabel(vehicle.category_id);
   const price = vehicle.price_long || vehicle.base_price_daily;
 
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(24)).current;
+  const scaleAnim = useRef(new Animated.Value(0.96)).current;
+  const heartScale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 380,
+        delay: index * 60,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 380,
+        delay: index * 60,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        delay: index * 60,
+        useNativeDriver: true,
+        tension: 80,
+        friction: 8,
+      }),
+    ]).start();
+  }, []);
+
+  const handleFavorite = () => {
+    Animated.sequence([
+      Animated.spring(heartScale, { toValue: 1.35, useNativeDriver: true, tension: 200, friction: 5 }),
+      Animated.spring(heartScale, { toValue: 1, useNativeDriver: true, tension: 200, friction: 5 }),
+    ]).start();
+    onFavorite();
+  };
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.88}>
-      {/* Image container */}
-      <View style={styles.imageContainer}>
-        <Image
-          source={{ uri: vehicle.image_url }}
-          style={styles.image}
-          resizeMode="cover"
-        />
+    <Animated.View
+      style={{
+        opacity: fadeAnim,
+        transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+      }}>
+      <TouchableOpacity
+        style={[styles.card, { backgroundColor: colors.card, shadowColor: colors.shadow }]}
+        onPress={onPress}
+        activeOpacity={0.88}>
 
-        {/* Gradient overlay at bottom */}
-        <View style={styles.imageOverlay} />
+        {/* Image container */}
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: vehicle.image_url }}
+            style={styles.image}
+            resizeMode="cover"
+          />
 
-        {/* Popular badge */}
-        {vehicle.is_popular && (
-          <View style={styles.popularBadge}>
-            <Text style={styles.popularText}>★ Top</Text>
+          {/* Gradient overlay */}
+          <View style={styles.imageOverlay} />
+
+          {/* Top row badges */}
+          {vehicle.is_popular && (
+            <View style={styles.popularBadge}>
+              <StarIcon size={9} color="#1a2744" filled />
+              <Text style={styles.popularText}> Top</Text>
+            </View>
+          )}
+
+          {/* Favorite button */}
+          <Animated.View style={[styles.heartBtn, { transform: [{ scale: heartScale }] }]}>
+            <TouchableOpacity
+              onPress={handleFavorite}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              style={styles.heartBtnInner}>
+              <HeartIcon
+                size={15}
+                color={isFavorite ? '#EF4444' : '#9CA3AF'}
+                filled={isFavorite}
+                strokeWidth={2}
+              />
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Category chip */}
+          <View style={[styles.catChip, { backgroundColor: catColor + 'EE' }]}>
+            <Text style={styles.catText}>{catLabel}</Text>
           </View>
-        )}
+        </View>
 
-        {/* Favorite button */}
-        <TouchableOpacity
-          style={styles.heartBtn}
-          onPress={onFavorite}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Text style={[styles.heart, isFavorite && styles.heartActive]}>
-            {isFavorite ? '♥' : '♡'}
+        {/* Info */}
+        <View style={[styles.info, { backgroundColor: colors.card }]}>
+          <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
+            {vehicle.name}
           </Text>
-        </TouchableOpacity>
 
-        {/* Category chip on image */}
-        <View style={[styles.catChipOnImage, { backgroundColor: catColor }]}>
-          <Text style={styles.catChipText}>{catLabel}</Text>
+          {/* Specs row */}
+          <View style={styles.specs}>
+            <View style={styles.specItem}>
+              <GearIcon size={11} color={colors.textMuted} strokeWidth={2} />
+              <Text style={[styles.spec, { color: colors.textMuted }]}>
+                {vehicle.transmission === 'Automatique' ? 'Auto' : 'Manuel'}
+              </Text>
+            </View>
+            <View style={styles.specDot} />
+            <View style={styles.specItem}>
+              <UsersIcon size={11} color={colors.textMuted} strokeWidth={2} />
+              <Text style={[styles.spec, { color: colors.textMuted }]}>{vehicle.seats}p</Text>
+            </View>
+          </View>
+
+          {/* Price row */}
+          <View style={styles.priceRow}>
+            <Text style={[styles.price, { color: colors.text }]}>{formatPrice(price)}</Text>
+            <Text style={[styles.perDay, { color: colors.textMuted }]}>/j</Text>
+          </View>
         </View>
-      </View>
-
-      {/* Info */}
-      <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={1}>{vehicle.name}</Text>
-
-        <View style={styles.specs}>
-          <Text style={styles.spec}>
-            {vehicle.transmission === 'Automatique' ? '⚙️ Auto' : '⚙️ Manuel'}
-          </Text>
-          <View style={styles.dot} />
-          <Text style={styles.spec}>👥 {vehicle.seats}p</Text>
-        </View>
-
-        <View style={styles.priceRow}>
-          <Text style={styles.price}>{formatPrice(price)}</Text>
-          <Text style={styles.perDay}>/j</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
-    backgroundColor: '#ffffff',
-    borderRadius: 18,
+    borderRadius: 20,
     marginBottom: 16,
     overflow: 'hidden',
-    shadowColor: '#1a2744',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.10,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowRadius: 14,
+    elevation: 6,
   },
   imageContainer: {
     width: '100%',
-    height: 128,
+    height: 130,
     backgroundColor: '#E5E7EB',
     position: 'relative',
   },
@@ -110,8 +176,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 40,
-    backgroundColor: 'rgba(0,0,0,0.18)',
+    height: 48,
+    backgroundColor: 'rgba(0,0,0,0.22)',
   },
   popularBadge: {
     position: 'absolute',
@@ -121,6 +187,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 7,
     paddingVertical: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   popularText: {
     fontSize: 9,
@@ -130,9 +198,11 @@ const styles = StyleSheet.create({
   },
   heartBtn: {
     position: 'absolute',
-    top: 6,
+    top: 7,
     right: 7,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+  },
+  heartBtnInner: {
+    backgroundColor: 'rgba(255,255,255,0.95)',
     borderRadius: 14,
     width: 30,
     height: 30,
@@ -144,22 +214,15 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
-  heart: {
-    fontSize: 16,
-    color: '#D1D5DB',
-  },
-  heartActive: {
-    color: '#EF4444',
-  },
-  catChipOnImage: {
+  catChip: {
     position: 'absolute',
     bottom: 8,
     left: 8,
     borderRadius: 6,
     paddingHorizontal: 7,
-    paddingVertical: 2,
+    paddingVertical: 3,
   },
-  catChipText: {
+  catText: {
     fontSize: 8,
     fontWeight: '800',
     color: '#fff',
@@ -172,7 +235,6 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#1a2744',
     marginBottom: 5,
     letterSpacing: -0.2,
   },
@@ -181,12 +243,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  specItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
   spec: {
     fontSize: 10,
-    color: '#6B7280',
     fontWeight: '500',
   },
-  dot: {
+  specDot: {
     width: 3,
     height: 3,
     borderRadius: 1.5,
@@ -200,12 +266,10 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 15,
     fontWeight: '900',
-    color: '#1a2744',
     letterSpacing: -0.3,
   },
   perDay: {
     fontSize: 10,
-    color: '#9CA3AF',
     marginLeft: 2,
     fontWeight: '600',
   },
