@@ -33,7 +33,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
 
       # ── 3. JDK 17 ──────────────────────────────────────────────────────
       - name: Setup JDK 17
@@ -54,8 +53,15 @@ jobs:
           restore-keys: gradle-${{ runner.os }}-
 
       # ── 5. Install JS deps ─────────────────────────────────────────────
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-${{ runner.os }}-${{ hashFiles('package.json') }}
+          restore-keys: node-${{ runner.os }}-
+
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       # ── 6. Make gradlew executable ─────────────────────────────────────
       - name: Make gradlew executable
