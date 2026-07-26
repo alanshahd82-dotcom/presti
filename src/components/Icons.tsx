@@ -1,278 +1,471 @@
+/**
+ * Pure React Native icon components — no native dependencies.
+ * All icons are rendered using View, Text, and StyleSheet only.
+ */
 import React from 'react';
-import Svg, { Path, Circle, Rect, G, Polyline, Line } from 'react-native-svg';
+import { View, Text, StyleSheet } from 'react-native';
 
 interface IconProps {
   size?: number;
   color?: string;
   strokeWidth?: number;
+  filled?: boolean;
 }
 
-export function HomeIcon({ size = 24, color = '#1a2744', strokeWidth = 2 }: IconProps) {
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function IconRoot({
+  size,
+  children,
+  style,
+}: {
+  size: number;
+  children: React.ReactNode;
+  style?: object;
+}) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Path
-        d="M9 22V12h6v10"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
+    <View style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}>
+      {children}
+    </View>
   );
 }
 
-export function CarIcon({ size = 24, color = '#1a2744', strokeWidth = 2 }: IconProps) {
+function IconText({
+  char,
+  size,
+  color,
+}: {
+  char: string;
+  size: number;
+  color: string;
+}) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M5 17H3a2 2 0 01-2-2V9a2 2 0 012-2h2"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Path
-        d="M19 17h2a2 2 0 002-2V9a2 2 0 00-2-2h-2"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Path
-        d="M5 7l2-4h10l2 4"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Rect
-        x="3"
-        y="7"
-        width="18"
-        height="10"
-        rx="2"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Circle cx="7.5" cy="17" r="2" stroke={color} strokeWidth={strokeWidth} />
-      <Circle cx="16.5" cy="17" r="2" stroke={color} strokeWidth={strokeWidth} />
-    </Svg>
+    <Text style={{ fontSize: size, color, lineHeight: size * 1.2, textAlign: 'center', includeFontPadding: false }}>
+      {char}
+    </Text>
   );
 }
 
-export function HeartIcon({ size = 24, color = '#D1D5DB', strokeWidth = 2, filled = false }: IconProps & { filled?: boolean }) {
+// ─── Icons ──────────────────────────────────────────────────────────────────
+
+export function HomeIcon({ size = 24, color = '#1a2744' }: IconProps) {
+  const s = size;
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? color : 'none'}>
-      <Path
-        d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
-        stroke={filled ? color : color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
+    <IconRoot size={s}>
+      {/* Roof */}
+      <View style={{
+        position: 'absolute',
+        top: s * 0.04,
+        borderLeftWidth: s * 0.5,
+        borderRightWidth: s * 0.5,
+        borderBottomWidth: s * 0.38,
+        borderLeftColor: 'transparent',
+        borderRightColor: 'transparent',
+        borderBottomColor: color,
+      }} />
+      {/* Body */}
+      <View style={{
+        position: 'absolute',
+        bottom: s * 0.04,
+        width: s * 0.64,
+        height: s * 0.44,
+        backgroundColor: color,
+        borderRadius: 1,
+      }}>
+        {/* Door */}
+        <View style={{
+          position: 'absolute',
+          bottom: 0,
+          alignSelf: 'center',
+          width: s * 0.24,
+          height: s * 0.26,
+          backgroundColor: 'rgba(255,255,255,0.35)',
+          borderRadius: 1,
+        }} />
+      </View>
+    </IconRoot>
   );
 }
 
-export function PhoneIcon({ size = 24, color = '#1a2744', strokeWidth = 2 }: IconProps) {
+export function CarIcon({ size = 24, color = '#1a2744' }: IconProps) {
+  const s = size;
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.12 1.18 2 2 0 012.1 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
+    <IconRoot size={s}>
+      {/* Car body */}
+      <View style={{
+        position: 'absolute',
+        bottom: s * 0.18,
+        width: s * 0.88,
+        height: s * 0.34,
+        backgroundColor: color,
+        borderRadius: s * 0.06,
+      }} />
+      {/* Car roof */}
+      <View style={{
+        position: 'absolute',
+        bottom: s * 0.48,
+        width: s * 0.56,
+        height: s * 0.24,
+        backgroundColor: color,
+        borderTopLeftRadius: s * 0.1,
+        borderTopRightRadius: s * 0.1,
+      }} />
+      {/* Wheel left */}
+      <View style={{
+        position: 'absolute',
+        bottom: s * 0.04,
+        left: s * 0.1,
+        width: s * 0.22,
+        height: s * 0.22,
+        borderRadius: s * 0.11,
+        borderWidth: s * 0.04,
+        borderColor: color,
+        backgroundColor: 'transparent',
+      }} />
+      {/* Wheel right */}
+      <View style={{
+        position: 'absolute',
+        bottom: s * 0.04,
+        right: s * 0.1,
+        width: s * 0.22,
+        height: s * 0.22,
+        borderRadius: s * 0.11,
+        borderWidth: s * 0.04,
+        borderColor: color,
+        backgroundColor: 'transparent',
+      }} />
+    </IconRoot>
   );
 }
 
-export function SearchIcon({ size = 24, color = '#6B7280', strokeWidth = 2 }: IconProps) {
+export function HeartIcon({ size = 24, color = '#D1D5DB', filled = false }: IconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx="11" cy="11" r="8" stroke={color} strokeWidth={strokeWidth} />
-      <Line
-        x1="21"
-        y1="21"
-        x2="16.65"
-        y2="16.65"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-      />
-    </Svg>
+    <IconRoot size={size}>
+      <Text style={{
+        fontSize: size * 0.9,
+        color: color,
+        lineHeight: size * 1.0,
+        textAlign: 'center',
+        includeFontPadding: false,
+      }}>
+        {filled ? '♥' : '♡'}
+      </Text>
+    </IconRoot>
   );
 }
 
-export function StarIcon({ size = 24, color = '#F5C518', strokeWidth = 2, filled = true }: IconProps & { filled?: boolean }) {
+export function PhoneIcon({ size = 24, color = '#1a2744' }: IconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? color : 'none'}>
-      <Path
-        d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
+    <IconRoot size={size}>
+      <Text style={{
+        fontSize: size * 0.82,
+        color,
+        lineHeight: size,
+        textAlign: 'center',
+        includeFontPadding: false,
+      }}>
+        {'✆'}
+      </Text>
+    </IconRoot>
   );
 }
 
-export function SunIcon({ size = 24, color = '#F5C518', strokeWidth = 2 }: IconProps) {
+export function SearchIcon({ size = 24, color = '#6B7280' }: IconProps) {
+  const s = size;
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx="12" cy="12" r="5" stroke={color} strokeWidth={strokeWidth} />
-      <Line x1="12" y1="1" x2="12" y2="3" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <Line x1="12" y1="21" x2="12" y2="23" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <Line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <Line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <Line x1="1" y1="12" x2="3" y2="12" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <Line x1="21" y1="12" x2="23" y2="12" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <Line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <Line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-    </Svg>
+    <IconRoot size={s}>
+      {/* Circle */}
+      <View style={{
+        position: 'absolute',
+        top: s * 0.04,
+        left: s * 0.04,
+        width: s * 0.62,
+        height: s * 0.62,
+        borderRadius: s * 0.31,
+        borderWidth: s * 0.09,
+        borderColor: color,
+        backgroundColor: 'transparent',
+      }} />
+      {/* Handle */}
+      <View style={{
+        position: 'absolute',
+        bottom: s * 0.04,
+        right: s * 0.04,
+        width: s * 0.08,
+        height: s * 0.34,
+        backgroundColor: color,
+        borderRadius: s * 0.04,
+        transform: [{ rotate: '-45deg' }],
+      }} />
+    </IconRoot>
   );
 }
 
-export function MoonIcon({ size = 24, color = '#94A3B8', strokeWidth = 2 }: IconProps) {
+export function StarIcon({ size = 24, color = '#F5C518', filled = true }: IconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
+    <IconRoot size={size}>
+      <Text style={{
+        fontSize: size * 0.88,
+        color,
+        lineHeight: size * 1.0,
+        textAlign: 'center',
+        includeFontPadding: false,
+      }}>
+        {filled ? '★' : '☆'}
+      </Text>
+    </IconRoot>
   );
 }
 
-export function ChevronRightIcon({ size = 24, color = '#1a2744', strokeWidth = 2 }: IconProps) {
+export function SunIcon({ size = 24, color = '#F5C518' }: IconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M9 18l6-6-6-6"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
+    <IconRoot size={size}>
+      <Text style={{
+        fontSize: size * 0.88,
+        color,
+        lineHeight: size * 1.0,
+        textAlign: 'center',
+        includeFontPadding: false,
+      }}>
+        {'☀'}
+      </Text>
+    </IconRoot>
   );
 }
 
-export function MapPinIcon({ size = 24, color = '#F5C518', strokeWidth = 2 }: IconProps) {
+export function MoonIcon({ size = 24, color = '#94A3B8' }: IconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Circle cx="12" cy="10" r="3" stroke={color} strokeWidth={strokeWidth} />
-    </Svg>
+    <IconRoot size={size}>
+      <Text style={{
+        fontSize: size * 0.82,
+        color,
+        lineHeight: size * 1.0,
+        textAlign: 'center',
+        includeFontPadding: false,
+      }}>
+        {'☽'}
+      </Text>
+    </IconRoot>
   );
 }
 
-export function ShieldIcon({ size = 24, color = '#22C55E', strokeWidth = 2 }: IconProps) {
+export function ChevronRightIcon({ size = 24, color = '#1a2744' }: IconProps) {
+  const s = size;
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
+    <IconRoot size={s}>
+      <View style={{
+        width: s * 0.32,
+        height: s * 0.32,
+        borderTopWidth: s * 0.09,
+        borderRightWidth: s * 0.09,
+        borderTopColor: color,
+        borderRightColor: color,
+        transform: [{ rotate: '45deg' }],
+        marginLeft: -s * 0.1,
+      }} />
+    </IconRoot>
   );
 }
 
-export function ZapIcon({ size = 24, color = '#F5C518', strokeWidth = 2 }: IconProps) {
+export function MapPinIcon({ size = 24, color = '#F5C518' }: IconProps) {
+  const s = size;
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Polyline
-        points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
+    <IconRoot size={s}>
+      {/* Pin head */}
+      <View style={{
+        position: 'absolute',
+        top: 0,
+        width: s * 0.56,
+        height: s * 0.56,
+        borderRadius: s * 0.28,
+        borderWidth: s * 0.1,
+        borderColor: color,
+        backgroundColor: 'transparent',
+      }} />
+      {/* Pin tail */}
+      <View style={{
+        position: 'absolute',
+        bottom: s * 0.08,
+        width: s * 0.08,
+        height: s * 0.32,
+        backgroundColor: color,
+        borderRadius: s * 0.04,
+      }} />
+    </IconRoot>
   );
 }
 
-export function FilterIcon({ size = 24, color = '#1a2744', strokeWidth = 2 }: IconProps) {
+export function ShieldIcon({ size = 24, color = '#22C55E' }: IconProps) {
+  const s = size;
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Line x1="4" y1="6" x2="20" y2="6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <Line x1="7" y1="12" x2="17" y2="12" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <Line x1="10" y1="18" x2="14" y2="18" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-    </Svg>
+    <IconRoot size={s}>
+      {/* Shield body */}
+      <View style={{
+        position: 'absolute',
+        top: s * 0.04,
+        width: s * 0.72,
+        height: s * 0.58,
+        borderWidth: s * 0.08,
+        borderColor: color,
+        borderRadius: s * 0.08,
+        backgroundColor: 'transparent',
+      }} />
+      {/* Shield bottom point */}
+      <View style={{
+        position: 'absolute',
+        bottom: s * 0.08,
+        borderLeftWidth: s * 0.18,
+        borderRightWidth: s * 0.18,
+        borderTopWidth: s * 0.22,
+        borderLeftColor: 'transparent',
+        borderRightColor: 'transparent',
+        borderTopColor: color,
+      }} />
+    </IconRoot>
+  );
+}
+
+export function ZapIcon({ size = 24, color = '#F5C518' }: IconProps) {
+  return (
+    <IconRoot size={size}>
+      <Text style={{
+        fontSize: size * 0.84,
+        color,
+        lineHeight: size * 1.0,
+        textAlign: 'center',
+        includeFontPadding: false,
+      }}>
+        {'⚡'}
+      </Text>
+    </IconRoot>
+  );
+}
+
+export function FilterIcon({ size = 24, color = '#1a2744' }: IconProps) {
+  const s = size;
+  const h = s * 0.08;
+  const gap = s * 0.2;
+  return (
+    <IconRoot size={s}>
+      {[-gap, 0, gap].map((offset, i) => (
+        <View key={i} style={{
+          position: 'absolute',
+          top: s * 0.5 + offset - h / 2,
+          width: [s * 0.88, s * 0.62, s * 0.38][i],
+          height: h,
+          borderRadius: h / 2,
+          backgroundColor: color,
+        }} />
+      ))}
+    </IconRoot>
   );
 }
 
 export function WhatsAppIcon({ size = 24, color = '#25D366' }: IconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <Path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-    </Svg>
+    <IconRoot size={size}>
+      <Text style={{
+        fontSize: size * 0.88,
+        color,
+        lineHeight: size * 1.0,
+        textAlign: 'center',
+        includeFontPadding: false,
+      }}>
+        {'✉'}
+      </Text>
+    </IconRoot>
   );
 }
 
-export function GearIcon({ size = 24, color = '#6B7280', strokeWidth = 2 }: IconProps) {
+export function GearIcon({ size = 24, color = '#6B7280' }: IconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx="12" cy="12" r="3" stroke={color} strokeWidth={strokeWidth} />
-      <Path
-        d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
+    <IconRoot size={size}>
+      <Text style={{
+        fontSize: size * 0.88,
+        color,
+        lineHeight: size * 1.0,
+        textAlign: 'center',
+        includeFontPadding: false,
+      }}>
+        {'⚙'}
+      </Text>
+    </IconRoot>
   );
 }
 
-export function UsersIcon({ size = 24, color = '#6B7280', strokeWidth = 2 }: IconProps) {
+export function UsersIcon({ size = 24, color = '#6B7280' }: IconProps) {
+  const s = size;
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-      <Circle cx="9" cy="7" r="4" stroke={color} strokeWidth={strokeWidth} />
-      <Path d="M23 21v-2a4 4 0 00-3-3.87" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-      <Path d="M16 3.13a4 4 0 010 7.75" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
+    <IconRoot size={s}>
+      {/* Head */}
+      <View style={{
+        position: 'absolute',
+        top: s * 0.06,
+        width: s * 0.32,
+        height: s * 0.32,
+        borderRadius: s * 0.16,
+        borderWidth: s * 0.08,
+        borderColor: color,
+        backgroundColor: 'transparent',
+      }} />
+      {/* Body */}
+      <View style={{
+        position: 'absolute',
+        bottom: s * 0.06,
+        width: s * 0.6,
+        height: s * 0.28,
+        borderTopLeftRadius: s * 0.12,
+        borderTopRightRadius: s * 0.12,
+        borderWidth: s * 0.08,
+        borderColor: color,
+        backgroundColor: 'transparent',
+        borderBottomWidth: 0,
+      }} />
+    </IconRoot>
   );
 }
 
-export function CheckCircleIcon({ size = 24, color = '#22C55E', strokeWidth = 2 }: IconProps) {
+export function CheckCircleIcon({ size = 24, color = '#22C55E' }: IconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M22 11.08V12a10 10 0 11-5.93-9.14" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-      <Polyline points="22 4 12 14.01 9 11.01" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
+    <IconRoot size={size}>
+      <Text style={{
+        fontSize: size * 0.88,
+        color,
+        lineHeight: size * 1.0,
+        textAlign: 'center',
+        includeFontPadding: false,
+      }}>
+        {'✓'}
+      </Text>
+    </IconRoot>
   );
 }
 
-export function ArrowRightIcon({ size = 24, color = '#1a2744', strokeWidth = 2 }: IconProps) {
+export function ArrowRightIcon({ size = 24, color = '#1a2744' }: IconProps) {
+  const s = size;
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Line x1="5" y1="12" x2="19" y2="12" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <Polyline points="12 5 19 12 12 19" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
+    <IconRoot size={s} style={{ flexDirection: 'row', alignItems: 'center' }}>
+      {/* Shaft */}
+      <View style={{
+        position: 'absolute',
+        left: s * 0.06,
+        width: s * 0.72,
+        height: s * 0.08,
+        borderRadius: s * 0.04,
+        backgroundColor: color,
+      }} />
+      {/* Arrowhead */}
+      <View style={{
+        position: 'absolute',
+        right: s * 0.06,
+        width: s * 0.3,
+        height: s * 0.3,
+        borderTopWidth: s * 0.08,
+        borderRightWidth: s * 0.08,
+        borderTopColor: color,
+        borderRightColor: color,
+        transform: [{ rotate: '45deg' }],
+      }} />
+    </IconRoot>
   );
 }
