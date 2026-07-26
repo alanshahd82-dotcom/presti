@@ -28,11 +28,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ── 2. Node.js ─────────────────────────────────────────────────────
-      - name: Setup Node.js 20
+      # ── 2. Node.js 22 LTS ──────────────────────────────────────────────
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       # ── 3. JDK 17 ──────────────────────────────────────────────────────
       - name: Setup JDK 17
@@ -54,6 +54,7 @@ jobs:
 
       # ── 5. Install JS deps ─────────────────────────────────────────────
       - name: Cache node_modules
+        id: node-cache
         uses: actions/cache@v4
         with:
           path: node_modules
@@ -61,7 +62,8 @@ jobs:
           restore-keys: node-${{ runner.os }}-
 
       - name: Install dependencies
-        run: npm ci --prefer-offline
+        if: steps.node-cache.outputs.cache-hit != 'true'
+        run: npm install --prefer-offline --legacy-peer-deps
 
       # ── 6. Make gradlew executable ─────────────────────────────────────
       - name: Make gradlew executable
@@ -73,13 +75,12 @@ jobs:
 
       - name: Bundle JS (Metro)
         run: |
-          npx react-native bundle \
+          node_modules/.bin/react-native bundle \
             --platform android \
             --dev false \
             --entry-file index.js \
             --bundle-output android/app/src/main/assets/index.android.bundle \
             --assets-dest android/app/src/main/res
-        continue-on-error: false
 
       # ── 8. Build APK ───────────────────────────────────────────────────
       - name: Build Release APK
