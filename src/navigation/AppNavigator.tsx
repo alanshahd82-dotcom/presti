@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -13,14 +13,38 @@ import CarDetailScreen from '../screens/CarDetailScreen';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<HomeTabParamList>();
 
-function TabIcon({ icon, label, focused }: { icon: string; label: string; focused: boolean }) {
+const ICONS: Record<string, { active: string; inactive: string }> = {
+  Home:      { active: '🏠', inactive: '🏠' },
+  Listings:  { active: '🚗', inactive: '🚗' },
+  Favorites: { active: '♥', inactive: '♡' },
+  Contact:   { active: '☎', inactive: '☎' },
+};
+
+const LABELS: Record<string, string> = {
+  Home: 'Accueil',
+  Listings: 'Voitures',
+  Favorites: 'Favoris',
+  Contact: 'Contact',
+};
+
+function TabIcon({ name, focused }: { name: string; focused: boolean }) {
+  const icon = focused ? ICONS[name].active : ICONS[name].inactive;
+  const label = LABELS[name];
   return (
     <View style={tabStyles.iconWrap}>
+      {focused && <View style={tabStyles.activePill} />}
       <Text style={[tabStyles.icon, focused && tabStyles.iconActive]}>{icon}</Text>
       <Text style={[tabStyles.label, focused && tabStyles.labelActive]}>{label}</Text>
     </View>
   );
 }
+
+const HEADER_COMMON = {
+  headerStyle: { backgroundColor: '#1a2744' },
+  headerTintColor: '#F5C518',
+  headerTitleStyle: { fontWeight: '800' as const, fontSize: 18, letterSpacing: 0.5 },
+  headerShadowVisible: false,
+};
 
 function HomeTabs() {
   return (
@@ -32,16 +56,15 @@ function HomeTabs() {
         tabBarActiveTintColor: '#F5C518',
         tabBarInactiveTintColor: '#9CA3AF',
       }}>
+
       <Tab.Screen
         name="Home"
         component={HomeScreen}
         options={{
           headerShown: true,
           headerTitle: 'Prestige Cars',
-          headerStyle: { backgroundColor: '#1a2744' },
-          headerTintColor: '#F5C518',
-          headerTitleStyle: { fontWeight: '800', fontSize: 18 },
-          tabBarIcon: ({ focused }) => <TabIcon icon="🏠" label="Accueil" focused={focused} />,
+          ...HEADER_COMMON,
+          tabBarIcon: ({ focused }) => <TabIcon name="Home" focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -50,10 +73,8 @@ function HomeTabs() {
         options={{
           headerShown: true,
           headerTitle: 'Notre Flotte',
-          headerStyle: { backgroundColor: '#1a2744' },
-          headerTintColor: '#F5C518',
-          headerTitleStyle: { fontWeight: '800', fontSize: 18 },
-          tabBarIcon: ({ focused }) => <TabIcon icon="🚗" label="Voitures" focused={focused} />,
+          ...HEADER_COMMON,
+          tabBarIcon: ({ focused }) => <TabIcon name="Listings" focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -62,10 +83,8 @@ function HomeTabs() {
         options={{
           headerShown: true,
           headerTitle: 'Mes Favoris',
-          headerStyle: { backgroundColor: '#1a2744' },
-          headerTintColor: '#F5C518',
-          headerTitleStyle: { fontWeight: '800', fontSize: 18 },
-          tabBarIcon: ({ focused }) => <TabIcon icon="♥" label="Favoris" focused={focused} />,
+          ...HEADER_COMMON,
+          tabBarIcon: ({ focused }) => <TabIcon name="Favorites" focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -74,10 +93,8 @@ function HomeTabs() {
         options={{
           headerShown: true,
           headerTitle: 'Contact',
-          headerStyle: { backgroundColor: '#1a2744' },
-          headerTintColor: '#F5C518',
-          headerTitleStyle: { fontWeight: '800', fontSize: 18 },
-          tabBarIcon: ({ focused }) => <TabIcon icon="☎" label="Contact" focused={focused} />,
+          ...HEADER_COMMON,
+          tabBarIcon: ({ focused }) => <TabIcon name="Contact" focused={focused} />,
         }}
       />
     </Tab.Navigator>
@@ -101,20 +118,45 @@ export default function AppNavigator() {
 
 const tabStyles = StyleSheet.create({
   bar: {
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    height: 70,
-    paddingBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 12,
+    backgroundColor: '#ffffff',
+    borderTopWidth: 0,
+    height: Platform.OS === 'ios' ? 80 : 70,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+    shadowColor: '#1a2744',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 16,
   },
-  iconWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 6 },
-  icon: { fontSize: 22, color: '#9CA3AF' },
-  iconActive: { color: '#F5C518' },
-  label: { fontSize: 10, color: '#9CA3AF', marginTop: 2, fontWeight: '600' },
-  labelActive: { color: '#1a2744', fontWeight: '700' },
+  iconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 6,
+    width: 64,
+  },
+  activePill: {
+    position: 'absolute',
+    top: -6,
+    width: 36,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: '#F5C518',
+  },
+  icon: {
+    fontSize: 22,
+    color: '#9CA3AF',
+  },
+  iconActive: {
+    color: '#1a2744',
+  },
+  label: {
+    fontSize: 10,
+    color: '#9CA3AF',
+    marginTop: 3,
+    fontWeight: '600',
+  },
+  labelActive: {
+    color: '#1a2744',
+    fontWeight: '700',
+  },
 });
