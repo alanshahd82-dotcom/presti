@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useRef } from 'react';
 import {
   View,
   Text,
-  Image,
+  Animated,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
@@ -64,7 +64,13 @@ export default function CarDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Image */}
         <View style={styles.imageWrapper}>
-          <Image source={{ uri: vehicle.image_url }} style={styles.image} resizeMode="cover" />
+          {/* Placeholder while image loads */}
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: '#1e2d4a' }]} />
+          <Animated.Image
+            source={{ uri: vehicle.image_url }}
+            style={styles.image}
+            resizeMode="cover"
+          />
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
@@ -159,7 +165,7 @@ export default function CarDetailScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F3F4F6' },
-  imageWrapper: { width, height: 280, position: 'relative', backgroundColor: '#E5E7EB' },
+  imageWrapper: { width, height: 280, position: 'relative' },
   image: { width: '100%', height: '100%' },
   backBtn: {
     position: 'absolute',

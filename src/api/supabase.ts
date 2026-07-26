@@ -1,3 +1,4 @@
+import { Image } from 'react-native';
 import { Vehicle, VipCar } from '../types';
 
 const SUPABASE_URL = 'https://fbpjlgubovxporadbzvu.supabase.co';
@@ -10,10 +11,17 @@ const headers = {
   'Content-Type': 'application/json',
 };
 
-// ─── In-memory cache (1 minute TTL) ────────────────────────────────────────
-const CACHE_TTL = 60_000;
+// ─── In-memory cache (5 minutes TTL) ───────────────────────────────────────
+const CACHE_TTL = 5 * 60_000;
 let vehicleCache: { data: Vehicle[]; ts: number } | null = null;
 let vipCache: { data: VipCar[]; ts: number } | null = null;
+
+// Pre-warm RN image disk cache so next renders are instant
+function prefetchImages(urls: string[]) {
+  urls.forEach(url => {
+    if (url) Image.prefetch(url).catch(() => {});
+  });
+}
 
 export async function fetchVehicles(): Promise<Vehicle[]> {
   if (vehicleCache && Date.now() - vehicleCache.ts < CACHE_TTL) {
@@ -26,6 +34,10 @@ export async function fetchVehicles(): Promise<Vehicle[]> {
   if (!res.ok) throw new Error('Failed to fetch vehicles');
   const data: Vehicle[] = await res.json();
   vehicleCache = { data, ts: Date.now() };
+
+  // Kick off prefetch in background — doesn't block rendering
+  prefetchImages(data.map(v => v.image_url));
+
   return data;
 }
 
@@ -40,5 +52,8 @@ export async function fetchVipCars(): Promise<VipCar[]> {
   if (!res.ok) throw new Error('Failed to fetch VIP cars');
   const data: VipCar[] = await res.json();
   vipCache = { data, ts: Date.now() };
+
+  prefetchImages(data.map((v: any) => v.image_url));
+
   return data;
 }

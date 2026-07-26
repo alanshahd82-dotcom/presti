@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, memo } from 'react';
+import React, { useRef, useEffect, useState, memo } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,9 @@ import { HeartIcon, StarIcon, GearIcon, UsersIcon } from './Icons';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 52) / 2;
 
+// Placeholder color shown while image downloads
+const PLACEHOLDER_BG = '#1e2d4a';
+
 interface Props {
   vehicle: Vehicle;
   onPress: () => void;
@@ -30,18 +33,28 @@ function CarCard({ vehicle, onPress, onFavorite, isFavorite, index = 0 }: Props)
   const catLabel = getCategoryLabel(vehicle.category_id);
   const price = vehicle.price_long || vehicle.base_price_daily;
 
-  // Single fade-in animation (was 3 simultaneous per card — big perf drain)
+  // Card entrance animation
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  // Image-specific fade — starts at 0, goes to 1 on load
+  const imgOpacity = useRef(new Animated.Value(0)).current;
   const heartScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 300,
-      delay: Math.min(index * 40, 200), // cap delay so late cards don't lag
+      delay: Math.min(index * 40, 200),
       useNativeDriver: true,
     }).start();
   }, []);
+
+  const handleImageLoad = () => {
+    Animated.timing(imgOpacity, {
+      toValue: 1,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  };
 
   const handleFavorite = () => {
     Animated.sequence([
@@ -60,10 +73,15 @@ function CarCard({ vehicle, onPress, onFavorite, isFavorite, index = 0 }: Props)
 
         {/* Image container */}
         <View style={styles.imageContainer}>
-          <Image
+          {/* Placeholder shown until image loads */}
+          <View style={[StyleSheet.absoluteFill, styles.placeholder]} />
+
+          {/* Actual image — fades in on load */}
+          <Animated.Image
             source={{ uri: vehicle.image_url }}
-            style={styles.image}
+            style={[styles.image, { opacity: imgOpacity }]}
             resizeMode="cover"
+            onLoad={handleImageLoad}
           />
 
           {/* Gradient overlay */}
@@ -150,6 +168,9 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 130,
     position: 'relative',
+  },
+  placeholder: {
+    backgroundColor: PLACEHOLDER_BG,
   },
   image: {
     width: '100%',
