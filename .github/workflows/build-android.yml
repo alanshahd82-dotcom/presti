@@ -52,24 +52,28 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/**/*.gradle*') }}
           restore-keys: gradle-${{ runner.os }}-
 
-      # ── 5. Install JS deps ─────────────────────────────────────────────
+      # ── 5. Cache node_modules ──────────────────────────────────────────
       - name: Cache node_modules
         id: node-cache
         uses: actions/cache@v4
         with:
           path: node_modules
-          key: node-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: node-${{ runner.os }}-
+          key: node22-${{ runner.os }}-${{ hashFiles('package.json') }}
+          restore-keys: node22-${{ runner.os }}-
 
+      # ── 6. Install JS deps (skip if cache hit) ─────────────────────────
       - name: Install dependencies
         if: steps.node-cache.outputs.cache-hit != 'true'
-        run: npm install --prefer-offline --legacy-peer-deps
+        run: |
+          npm install --legacy-peer-deps --no-audit --no-fund
+        env:
+          NODE_ENV: development
 
-      # ── 6. Make gradlew executable ─────────────────────────────────────
+      # ── 7. Make gradlew executable ─────────────────────────────────────
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      # ── 7. Bundle JS ───────────────────────────────────────────────────
+      # ── 8. Create assets directory & Bundle JS ─────────────────────────
       - name: Create assets directory
         run: mkdir -p android/app/src/main/assets
 
@@ -82,14 +86,14 @@ jobs:
             --bundle-output android/app/src/main/assets/index.android.bundle \
             --assets-dest android/app/src/main/res
 
-      # ── 8. Build APK ───────────────────────────────────────────────────
+      # ── 9. Build APK ───────────────────────────────────────────────────
       - name: Build Release APK
         working-directory: android
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
         run: ./gradlew assembleRelease --no-daemon --stacktrace
 
-      # ── 9. Get build info ──────────────────────────────────────────────
+      # ── 10. Get build info ─────────────────────────────────────────────
       - name: Get version & date
         id: info
         run: |
@@ -101,13 +105,13 @@ jobs:
           echo "sha=$SHORT_SHA" >> $GITHUB_OUTPUT
           echo "apk_name=PrestiCars-v${VERSION}-${DATE}.apk" >> $GITHUB_OUTPUT
 
-      # ── 10. Rename APK ─────────────────────────────────────────────────
+      # ── 11. Rename APK ─────────────────────────────────────────────────
       - name: Rename APK
         run: |
           cp android/app/build/outputs/apk/release/app-release.apk \
              android/app/build/outputs/apk/release/${{ steps.info.outputs.apk_name }}
 
-      # ── 11. Upload artifact ────────────────────────────────────────────
+      # ── 12. Upload artifact ────────────────────────────────────────────
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
@@ -115,7 +119,7 @@ jobs:
           path: android/app/build/outputs/apk/release/${{ steps.info.outputs.apk_name }}
           retention-days: 30
 
-      # ── 12. Create/update GitHub Release ──────────────────────────────
+      # ── 13. Create/update GitHub Release ──────────────────────────────
       - name: Create or update GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -124,7 +128,6 @@ jobs:
           APK_PATH="android/app/build/outputs/apk/release/${{ steps.info.outputs.apk_name }}"
           NOTE="${{ github.event.inputs.release_note || 'تحديث تلقائي عبر GitHub Actions' }}"
 
-          # Create release if it doesn't exist
           if ! gh release view "$TAG" --repo "${{ github.repository }}" > /dev/null 2>&1; then
             gh release create "$TAG" \
               --repo "${{ github.repository }}" \
@@ -142,29 +145,22 @@ jobs:
           3. اسمح بتثبيت التطبيقات من مصادر غير معروفة إذا طُلب منك"
           fi
 
-          # Delete old APK assets with same tag (keep release fresh)
           for ASSET_ID in $(gh api "repos/${{ github.repository }}/releases/tags/$TAG" \
             --jq '.assets[].id' 2>/dev/null || echo ""); do
             gh api -X DELETE "repos/${{ github.repository }}/releases/assets/$ASSET_ID" 2>/dev/null || true
           done
 
-          # Upload new APK
           gh release upload "$TAG" "$APK_PATH" \
             --repo "${{ github.repository }}" \
             --clobber
 
-          echo "✅ APK uploaded to: $(gh release view $TAG --repo ${{ github.repository }} --json url -q '.url')"
+          echo "✅ APK uploaded: $(gh release view $TAG --repo ${{ github.repository }} --json url -q '.url')"
 
-      # ── 13. Summary ────────────────────────────────────────────────────
+      # ── 14. Summary ────────────────────────────────────────────────────
       - name: Job summary
         run: |
           echo "## 🚗 PrestiCars APK Build" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| المعلومة | القيمة |" >> $GITHUB_STEP_SUMMARY
-          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| الإصدار | v${{ steps.info.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
           echo "| التاريخ | ${{ steps.info.outputs.date }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Commit  | \`${{ steps.info.outputs.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| الملف   | ${{ steps.info.outputs.apk_name }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **تم بناء APK بنجاح وتحميله على GitHub Releases**" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **تم بناء APK بنجاح**" >> $GITHUB_STEP_SUMMARY
