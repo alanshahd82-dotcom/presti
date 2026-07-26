@@ -19,7 +19,9 @@ let vipCache: { data: VipCar[]; ts: number } | null = null;
 // Pre-warm RN image disk cache so next renders are instant
 function prefetchImages(urls: string[]) {
   urls.forEach(url => {
-    if (url) Image.prefetch(url).catch(() => {});
+    if (url) {
+      Image.prefetch(url).catch(() => {});
+    }
   });
 }
 
@@ -31,7 +33,9 @@ export async function fetchVehicles(): Promise<Vehicle[]> {
     `${SUPABASE_URL}/rest/v1/vehicles?select=*&is_available=eq.true&order=is_popular.desc,id`,
     { headers },
   );
-  if (!res.ok) throw new Error('Failed to fetch vehicles');
+  if (!res.ok) {
+    throw new Error(`Failed to fetch vehicles: ${res.status}`);
+  }
   const data: Vehicle[] = await res.json();
   vehicleCache = { data, ts: Date.now() };
 
@@ -49,11 +53,18 @@ export async function fetchVipCars(): Promise<VipCar[]> {
     `${SUPABASE_URL}/rest/v1/vip_cars?select=*&is_active=eq.true&order=sort_order`,
     { headers },
   );
-  if (!res.ok) throw new Error('Failed to fetch VIP cars');
+  if (!res.ok) {
+    throw new Error(`Failed to fetch VIP cars: ${res.status}`);
+  }
   const data: VipCar[] = await res.json();
   vipCache = { data, ts: Date.now() };
 
-  prefetchImages(data.map((v: any) => v.image_url));
+  prefetchImages(data.map((v: VipCar) => v.main_image));
 
   return data;
+}
+
+export function invalidateCache() {
+  vehicleCache = null;
+  vipCache = null;
 }

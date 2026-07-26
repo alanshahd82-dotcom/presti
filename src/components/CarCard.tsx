@@ -46,7 +46,7 @@ function CarCard({ vehicle, onPress, onFavorite, isFavorite, index = 0 }: Props)
       delay: Math.min(index * 40, 200),
       useNativeDriver: true,
     }).start();
-  }, []);
+  }, [fadeAnim, index]);
 
   const handleImageLoad = () => {
     Animated.timing(imgOpacity, {

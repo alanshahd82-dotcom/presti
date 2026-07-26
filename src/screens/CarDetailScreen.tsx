@@ -8,9 +8,9 @@ import {
   StyleSheet,
   Linking,
   Dimensions,
-  Alert,
 } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../types';
 import { useFavorites } from '../hooks/useFavorites';
 import {
@@ -27,6 +27,7 @@ type RouteType = RouteProp<RootStackParamList, 'CarDetail'>;
 export default function CarDetailScreen() {
   const route = useRoute<RouteType>();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { vehicle } = route.params;
   const { toggleFavorite, isFavorite } = useFavorites();
   const fav = isFavorite(vehicle.id);
@@ -59,9 +60,14 @@ export default function CarDetailScreen() {
     Linking.openURL(`tel:${PHONE_MOBILE.replace(/\s|-/g, '')}`);
   };
 
+  // CTA height = fixed padding + safe area bottom (gesture bar / home indicator)
+  const ctaBottomPadding = Math.max(insets.bottom, 14);
+
   return (
     <View style={styles.root}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 80 + ctaBottomPadding }}>
         {/* Image */}
         <View style={styles.imageWrapper}>
           {/* Placeholder while image loads */}
@@ -71,10 +77,14 @@ export default function CarDetailScreen() {
             style={styles.image}
             resizeMode="cover"
           />
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            style={[styles.backBtn, { top: 16 + insets.top }]}
+            onPress={() => navigation.goBack()}>
             <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.favBtn} onPress={() => toggleFavorite(vehicle)}>
+          <TouchableOpacity
+            style={[styles.favBtn, { top: 16 + insets.top }]}
+            onPress={() => toggleFavorite(vehicle)}>
             <Text style={[styles.favIcon, fav && styles.favActive]}>{fav ? '♥' : '♡'}</Text>
           </TouchableOpacity>
           {vehicle.is_popular && (
@@ -144,8 +154,8 @@ export default function CarDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* Bottom CTA */}
-      <View style={styles.cta}>
+      {/* Bottom CTA — respects safe area (home indicator / gesture bar) */}
+      <View style={[styles.cta, { paddingBottom: ctaBottomPadding }]}>
         <View>
           <Text style={styles.ctaPrice}>{formatPrice(vehicle.price_long || vehicle.base_price_daily)}</Text>
           <Text style={styles.ctaPerDay}>par jour (15+ jours)</Text>
@@ -169,7 +179,6 @@ const styles = StyleSheet.create({
   image: { width: '100%', height: '100%' },
   backBtn: {
     position: 'absolute',
-    top: 50,
     left: 16,
     backgroundColor: 'rgba(0,0,0,0.45)',
     borderRadius: 20,
@@ -181,7 +190,6 @@ const styles = StyleSheet.create({
   backArrow: { color: '#fff', fontSize: 20, fontWeight: '700' },
   favBtn: {
     position: 'absolute',
-    top: 50,
     right: 16,
     backgroundColor: 'rgba(255,255,255,0.9)',
     borderRadius: 20,
@@ -202,7 +210,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   popularText: { fontSize: 11, fontWeight: '700', color: '#1a2744' },
-  content: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 100 },
+  content: { paddingHorizontal: 16, paddingTop: 20 },
   nameRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 20 },
   catChip: {
     alignSelf: 'flex-start',
@@ -260,6 +268,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0FDF4',
     borderRadius: 14,
     padding: 14,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: '#BBF7D0',
   },
@@ -276,8 +285,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 14,
-    paddingBottom: 28,
+    paddingTop: 14,
     borderTopWidth: 1,
     borderTopColor: '#F3F4F6',
     shadowColor: '#000',
