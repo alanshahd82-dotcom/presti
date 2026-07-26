@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, memo } from 'react';
 import {
   View,
   Text,
@@ -24,39 +24,23 @@ interface Props {
   index?: number;
 }
 
-export default function CarCard({ vehicle, onPress, onFavorite, isFavorite, index = 0 }: Props) {
+function CarCard({ vehicle, onPress, onFavorite, isFavorite, index = 0 }: Props) {
   const { colors } = useTheme();
   const catColor = getCategoryColor(vehicle.category_id);
   const catLabel = getCategoryLabel(vehicle.category_id);
   const price = vehicle.price_long || vehicle.base_price_daily;
 
+  // Single fade-in animation (was 3 simultaneous per card — big perf drain)
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(24)).current;
-  const scaleAnim = useRef(new Animated.Value(0.96)).current;
   const heartScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 380,
-        delay: index * 60,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 380,
-        delay: index * 60,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        delay: index * 60,
-        useNativeDriver: true,
-        tension: 80,
-        friction: 8,
-      }),
-    ]).start();
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      delay: Math.min(index * 40, 200), // cap delay so late cards don't lag
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   const handleFavorite = () => {
@@ -68,11 +52,7 @@ export default function CarCard({ vehicle, onPress, onFavorite, isFavorite, inde
   };
 
   return (
-    <Animated.View
-      style={{
-        opacity: fadeAnim,
-        transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
-      }}>
+    <Animated.View style={{ opacity: fadeAnim }}>
       <TouchableOpacity
         style={[styles.card, { backgroundColor: colors.card, shadowColor: colors.shadow }]}
         onPress={onPress}
@@ -127,21 +107,25 @@ export default function CarCard({ vehicle, onPress, onFavorite, isFavorite, inde
           {/* Specs row */}
           <View style={styles.specs}>
             <View style={styles.specItem}>
-              <GearIcon size={11} color={colors.textMuted} strokeWidth={2} />
+              <GearIcon size={10} color={colors.textMuted} />
               <Text style={[styles.spec, { color: colors.textMuted }]}>
-                {vehicle.transmission === 'Automatique' ? 'Auto' : 'Manuel'}
+                {' '}{vehicle.transmission}
               </Text>
             </View>
             <View style={styles.specDot} />
             <View style={styles.specItem}>
-              <UsersIcon size={11} color={colors.textMuted} strokeWidth={2} />
-              <Text style={[styles.spec, { color: colors.textMuted }]}>{vehicle.seats}p</Text>
+              <UsersIcon size={10} color={colors.textMuted} />
+              <Text style={[styles.spec, { color: colors.textMuted }]}>
+                {' '}{vehicle.seats}
+              </Text>
             </View>
           </View>
 
-          {/* Price row */}
+          {/* Price */}
           <View style={styles.priceRow}>
-            <Text style={[styles.price, { color: colors.text }]}>{formatPrice(price)}</Text>
+            <Text style={[styles.price, { color: colors.primary }]}>
+              {formatPrice(price)}
+            </Text>
             <Text style={[styles.perDay, { color: colors.textMuted }]}>/j</Text>
           </View>
         </View>
@@ -150,21 +134,21 @@ export default function CarCard({ vehicle, onPress, onFavorite, isFavorite, inde
   );
 }
 
+export default memo(CarCard);
+
 const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
-    borderRadius: 20,
-    marginBottom: 16,
+    borderRadius: 18,
     overflow: 'hidden',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.10,
-    shadowRadius: 14,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   imageContainer: {
     width: '100%',
     height: 130,
-    backgroundColor: '#E5E7EB',
     position: 'relative',
   },
   image: {
@@ -172,12 +156,8 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   imageOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 48,
-    backgroundColor: 'rgba(0,0,0,0.22)',
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.08)',
   },
   popularBadge: {
     position: 'absolute',
@@ -194,25 +174,18 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '800',
     color: '#1a2744',
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   heartBtn: {
     position: 'absolute',
-    top: 7,
-    right: 7,
+    top: 8,
+    right: 8,
   },
   heartBtnInner: {
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    borderRadius: 14,
-    width: 30,
-    height: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 2,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: 10,
+    padding: 6,
   },
   catChip: {
     position: 'absolute',
@@ -223,7 +196,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   catText: {
-    fontSize: 8,
+    fontSize: 9,
     fontWeight: '800',
     color: '#fff',
     letterSpacing: 0.5,
@@ -246,7 +219,6 @@ const styles = StyleSheet.create({
   specItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
   },
   spec: {
     fontSize: 10,

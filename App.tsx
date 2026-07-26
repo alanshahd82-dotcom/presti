@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { StatusBar } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeProvider } from './src/context/ThemeContext';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -22,13 +23,11 @@ export default function App(): React.JSX.Element {
 
   return (
     <SafeAreaProvider>
+      {/* Global: translucent so content draws edge-to-edge under system bars */}
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
       <ThemeProvider>
-        {state === 'splash' && (
-          <SplashScreen onFinish={handleSplashDone} />
-        )}
-        {state === 'onboarding' && (
-          <OnboardingScreen onDone={() => setState('app')} />
-        )}
+        {state === 'splash' && <SplashScreen onFinish={handleSplashDone} />}
+        {state === 'onboarding' && <OnboardingScreen onDone={() => setState('app')} />}
         {state === 'app' && <AppNavigator />}
       </ThemeProvider>
     </SafeAreaProvider>

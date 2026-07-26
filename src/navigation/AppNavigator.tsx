@@ -3,6 +3,7 @@ import { View, StyleSheet, Platform } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList, HomeTabParamList } from '../types';
 import HomeScreen from '../screens/HomeScreen';
 import ListingsScreen from '../screens/ListingsScreen';
@@ -14,13 +15,6 @@ import { HomeIcon, CarIcon, HeartIcon, PhoneIcon } from '../components/Icons';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<HomeTabParamList>();
-
-const LABELS: Record<string, string> = {
-  Home: 'Accueil',
-  Listings: 'Voitures',
-  Favorites: 'Favoris',
-  Contact: 'Contact',
-};
 
 function TabIcon({
   name,
@@ -69,7 +63,9 @@ function TabIcon({
 
 function HomeTabs() {
   const { colors, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
 
+  // Shared header style for screens that use react-navigation header
   const HEADER_COMMON = {
     headerStyle: { backgroundColor: '#1a2744' },
     headerTintColor: '#F5C518',
@@ -77,32 +73,37 @@ function HomeTabs() {
     headerShadowVisible: false,
   };
 
+  // Tab bar height respects bottom safe area (transparent nav bar on Android)
+  const tabBarHeight = 60 + insets.bottom;
+
   return (
     <Tab.Navigator
       screenOptions={{
-        headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: [
           tabStyles.bar,
           {
             backgroundColor: colors.tabBg,
             borderTopColor: colors.tabBorder,
+            height: tabBarHeight,
+            paddingBottom: insets.bottom || 6,
           },
         ],
       }}>
 
+      {/* Home: has its own full hero — no react-nav header */}
       <Tab.Screen
         name="Home"
         component={HomeScreen}
         options={{
-          headerShown: true,
-          headerTitle: 'Prestige Cars',
-          ...HEADER_COMMON,
+          headerShown: false,
           tabBarIcon: ({ focused }) => (
             <TabIcon name="Home" focused={focused} colors={colors} />
           ),
         }}
       />
+
+      {/* Listings: uses react-nav header */}
       <Tab.Screen
         name="Listings"
         component={ListingsScreen}
@@ -115,6 +116,8 @@ function HomeTabs() {
           ),
         }}
       />
+
+      {/* Favorites: uses react-nav header */}
       <Tab.Screen
         name="Favorites"
         component={FavoritesScreen}
@@ -127,13 +130,13 @@ function HomeTabs() {
           ),
         }}
       />
+
+      {/* Contact: has its own full hero — no react-nav header */}
       <Tab.Screen
         name="Contact"
         component={ContactScreen}
         options={{
-          headerShown: true,
-          headerTitle: 'Contact',
-          ...HEADER_COMMON,
+          headerShown: false,
           tabBarIcon: ({ focused }) => (
             <TabIcon name="Contact" focused={focused} colors={colors} />
           ),
@@ -144,7 +147,7 @@ function HomeTabs() {
 }
 
 export default function AppNavigator() {
-  const { isDark, colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
   const navTheme = isDark
     ? {
@@ -152,7 +155,7 @@ export default function AppNavigator() {
         colors: {
           ...DarkTheme.colors,
           background: colors.bg,
-          card: colors.card,
+          card: '#1a2744',
           text: colors.text,
           border: colors.border,
         },
@@ -162,7 +165,7 @@ export default function AppNavigator() {
         colors: {
           ...DefaultTheme.colors,
           background: colors.bg,
-          card: colors.card,
+          card: '#1a2744',
           text: colors.text,
           border: colors.border,
         },
@@ -185,8 +188,6 @@ export default function AppNavigator() {
 const tabStyles = StyleSheet.create({
   bar: {
     borderTopWidth: 1,
-    height: Platform.OS === 'ios' ? 80 : 68,
-    paddingBottom: Platform.OS === 'ios' ? 20 : 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.06,

@@ -12,6 +12,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { fetchVehicles } from '../api/supabase';
 import { Vehicle, RootStackParamList } from '../types';
@@ -82,6 +83,7 @@ function CategoryCard({
 export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
   const { colors, isDark, toggle } = useTheme();
+  const insets = useSafeAreaInsets();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -140,13 +142,12 @@ export default function HomeScreen() {
       }
       showsVerticalScrollIndicator={false}>
 
-      <StatusBar barStyle="light-content" backgroundColor={colors.heroBg} />
 
       {/* ── Hero ── */}
       <Animated.View
         style={[
           styles.hero,
-          { backgroundColor: colors.heroBg },
+          { backgroundColor: colors.heroBg, paddingTop: insets.top },
           {
             opacity: heroAnim,
             transform: [{ translateY: heroAnim.interpolate({ inputRange: [0, 1], outputRange: [-18, 0] }) }],

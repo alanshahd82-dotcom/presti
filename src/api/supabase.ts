@@ -10,20 +10,35 @@ const headers = {
   'Content-Type': 'application/json',
 };
 
+// ─── In-memory cache (1 minute TTL) ────────────────────────────────────────
+const CACHE_TTL = 60_000;
+let vehicleCache: { data: Vehicle[]; ts: number } | null = null;
+let vipCache: { data: VipCar[]; ts: number } | null = null;
+
 export async function fetchVehicles(): Promise<Vehicle[]> {
+  if (vehicleCache && Date.now() - vehicleCache.ts < CACHE_TTL) {
+    return vehicleCache.data;
+  }
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/vehicles?select=*&is_available=eq.true&order=is_popular.desc,id`,
     { headers },
   );
   if (!res.ok) throw new Error('Failed to fetch vehicles');
-  return res.json();
+  const data: Vehicle[] = await res.json();
+  vehicleCache = { data, ts: Date.now() };
+  return data;
 }
 
 export async function fetchVipCars(): Promise<VipCar[]> {
+  if (vipCache && Date.now() - vipCache.ts < CACHE_TTL) {
+    return vipCache.data;
+  }
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/vip_cars?select=*&is_active=eq.true&order=sort_order`,
     { headers },
   );
   if (!res.ok) throw new Error('Failed to fetch VIP cars');
-  return res.json();
+  const data: VipCar[] = await res.json();
+  vipCache = { data, ts: Date.now() };
+  return data;
 }

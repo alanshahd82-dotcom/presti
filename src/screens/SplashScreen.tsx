@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
+  Image,
   Animated,
   StyleSheet,
   Dimensions,
@@ -110,7 +111,7 @@ export default function SplashScreen({ onFinish }: Props) {
 
   return (
     <Animated.View style={[styles.root, { opacity: screenOpacity }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#0d1a33" />
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
 
       {/* Background gradient layers */}
       <View style={styles.bgTop} />
@@ -143,9 +144,11 @@ export default function SplashScreen({ onFinish }: Props) {
             },
           ]}>
           <View style={styles.logoOuter}>
-            <View style={styles.logoInner}>
-              <Text style={styles.logoLetter}>P</Text>
-            </View>
+            <Image
+              source={require('../../assets/icon.jpg')}
+              style={styles.logoImage}
+              resizeMode="cover"
+            />
           </View>
         </Animated.View>
 
@@ -290,22 +293,10 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 20,
   },
-  logoInner: {
-    width: 84,
-    height: 84,
-    borderRadius: 22,
-    backgroundColor: '#1a2744',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(245, 197, 24, 0.3)',
-  },
-  logoLetter: {
-    color: '#F5C518',
-    fontSize: 52,
-    fontWeight: '900',
-    letterSpacing: -2,
-    lineHeight: 60,
+  logoImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 24,
   },
   brandTop: {
     color: '#FFFFFF',

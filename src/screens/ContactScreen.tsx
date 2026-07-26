@@ -16,6 +16,7 @@ import {
   MAPS_URL,
 } from '../utils/format';
 import { useTheme } from '../context/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WhatsAppIcon, PhoneIcon, MapPinIcon, ShieldIcon, ZapIcon } from '../components/Icons';
 
 const HOURS = [
@@ -32,6 +33,7 @@ const QUICK_MSGS = [
 
 export default function ContactScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const openWhatsApp = (msg = '') => {
     const encoded = encodeURIComponent(
@@ -51,7 +53,7 @@ export default function ContactScreen() {
       contentContainerStyle={{ paddingBottom: 40 }}>
 
       {/* Hero */}
-      <View style={styles.hero}>
+      <View style={[styles.hero, { paddingTop: insets.top + 12 }]}>
         <View style={styles.heroDeco} />
         <Text style={styles.heroTitle}>Contactez-nous</Text>
         <Text style={styles.heroSub}>
